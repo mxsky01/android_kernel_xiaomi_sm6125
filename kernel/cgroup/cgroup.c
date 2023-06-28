@@ -2704,7 +2704,7 @@ int cgroup_attach_task(struct cgroup *dst_cgrp, struct task_struct *leader,
 	if (!ret) {
 		memset(dst_path, 0, sizeof(dst_path));
 		cgroup_path(dst_cgrp, dst_path, PATH_LEN);
-		trace_cgroup_attach_task(dst_cgrp, dst_path, leader, threadgroup);
+		trace_cgroup_attach_task(dst_cgrp, leader, threadgroup);
 #ifdef CONFIG_PERF_HUMANTASK
 		if (strlen(dst_path) > 2) {
 			task_lock(leader);
