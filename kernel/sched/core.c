@@ -5896,7 +5896,7 @@ out:
 	return ret;
 }
 
-bool sched_smp_initialized __read_mostly1;
+bool sched_smp_initialized ___read_mostly;
 
 #ifdef CONFIG_NUMA_BALANCING
 /* Migrate current task p to target_cpu */
@@ -6655,7 +6655,7 @@ struct task_group root_task_group;
 LIST_HEAD(task_groups);
 
 /* Cacheline aligned slab cache for task_group */
-static struct kmem_cache *task_group_cache __read_mostly2;
+static struct kmem_cache *task_group_cache __read_mostly_g;
 #endif
 
 DECLARE_PER_CPU(cpumask_var_t, load_balance_mask);
