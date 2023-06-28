@@ -1780,7 +1780,7 @@ static inline u32 predict_and_update_buckets(
 }
 
 static int
-__account_busy_for_task_demand(struct rq *rq, struct task_struct *p, int event)
+__account_busy_for_task_demand(struct rq *rq, struct task_struct *p, int event,bool account_wait_time)
 {
 	/*
 	 * No need to bother updating task demand for exiting tasks
