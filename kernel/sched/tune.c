@@ -498,12 +498,13 @@ static inline int schedtune_adj_ta(struct task_struct *p)
 int schedtune_task_boost(struct task_struct *p)
 {
 	int task_boost;
-
+	struct schedtune *st;
 	if (unlikely(!schedtune_initialized) || unlikely(is_battery_saver_on()))
 		return 0;
 
 	/* Get task boost value */
 	rcu_read_lock();
+	st = task_schedtune(p);
 	task_boost = schedtune_adj_ta(p);
 	if (sched_boost_top_app()) {
 		if (1 == st->sched_boost_no_override)
