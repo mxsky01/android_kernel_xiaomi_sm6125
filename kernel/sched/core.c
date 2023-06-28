@@ -6655,7 +6655,8 @@ struct task_group root_task_group;
 LIST_HEAD(task_groups);
 
 /* Cacheline aligned slab cache for task_group */
-//static struct kmem_cache *task_group_cache __read_mostly_g;
+//static struct kmem_cache *task_group_cache,__read_mostly_g;
+static struct kmem_cache *task_group_cache;
 #endif
 
 DECLARE_PER_CPU(cpumask_var_t, load_balance_mask);
