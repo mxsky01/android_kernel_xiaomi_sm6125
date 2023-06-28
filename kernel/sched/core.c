@@ -86,7 +86,7 @@ const_debug unsigned int sysctl_sched_time_avg = MSEC_PER_SEC;
  */
 unsigned int sysctl_sched_rt_period = 1000000;
 
-__read_mostly int scheduler_running;
+__read_mostly1 int scheduler_running;
 
 /*
  * part of the period that we allow rt tasks to run in us.
@@ -5783,7 +5783,7 @@ void show_state_filter_single(unsigned long state_filter)
 			sched_show_task(p);
 	}
 	rcu_read_unlock();
-
+}
 /**
  * init_idle - set up an idle thread for a given CPU
  * @idle: task in question
@@ -5896,7 +5896,7 @@ out:
 	return ret;
 }
 
-bool sched_smp_initialized __read_mostly;
+bool sched_smp_initialized __read_mostly1;
 
 #ifdef CONFIG_NUMA_BALANCING
 /* Migrate current task p to target_cpu */
@@ -6655,7 +6655,7 @@ struct task_group root_task_group;
 LIST_HEAD(task_groups);
 
 /* Cacheline aligned slab cache for task_group */
-static struct kmem_cache *task_group_cache __read_mostly;
+static struct kmem_cache *task_group_cache __read_mostly1;
 #endif
 
 DECLARE_PER_CPU(cpumask_var_t, load_balance_mask);
@@ -7716,7 +7716,7 @@ void sched_exit(struct task_struct *p)
 }
 #endif /* CONFIG_SCHED_WALT */
 
-__read_mostly bool sched_predl = 1;
+__read_mostly1 bool sched_predl = 1;
 inline bool is_critical_task(struct task_struct *p)
 {
 	return is_top_app(p) || is_inherit_top_app(p);
