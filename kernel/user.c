@@ -19,6 +19,9 @@
 #include <linux/user_namespace.h>
 #include <linux/proc_fs.h>
 #include <linux/proc_ns.h>
+#ifdef CONFIG_PACKAGE_RUNTIME_INFO
+#include <linux/pkg_stat.h>
+#endif
 
 /*
  * userns count is 1 for root user, 1 for init_uts_ns,
@@ -96,6 +99,10 @@ struct user_struct root_user = {
 	.sigpending	= ATOMIC_INIT(0),
 	.locked_shm     = 0,
 	.uid		= GLOBAL_ROOT_UID,
+#ifdef CONFIG_PACKAGE_RUNTIME_INFO
+	.pkg.lock	= __RW_LOCK_UNLOCKED(root_user.pkg.lock),
+	.pkg.list	= LIST_HEAD_INIT(root_user.pkg.list),
+#endif
 };
 
 /*
@@ -185,6 +192,9 @@ struct user_struct *alloc_uid(kuid_t uid)
 			goto out_unlock;
 
 		new->uid = uid;
+#ifdef CONFIG_PACKAGE_RUNTIME_INFO
+		init_package_runtime_info(new);
+#endif
 		atomic_set(&new->__count, 1);
 
 		/*

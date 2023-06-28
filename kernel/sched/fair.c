@@ -80,7 +80,7 @@ walt_dec_cfs_rq_stats(struct cfs_rq *cfs_rq, struct task_struct *p) {}
 #define walt_dec_throttled_cfs_rq_stats(...)
 
 #endif
-
+unsigned int super_big_cpu = 7;
 /*
  * Targeted preemption latency for CPU-bound tasks:
  *
@@ -105,6 +105,7 @@ unsigned int sysctl_sched_sync_hint_enable = 1;
  * Enable/disable using cstate knowledge in idle sibling selection
  */
 unsigned int sysctl_sched_cstate_aware = 1;
+unsigned int sysctl_boost_stask_to_big = 1;
 
 /*
  * The initial- and re-scaling of tunables is configurable
@@ -605,11 +606,42 @@ static void update_min_vruntime(struct cfs_rq *cfs_rq)
 
 	/* ensure we never gain time by being placed backwards. */
 	cfs_rq->min_vruntime = max_vruntime(cfs_rq->min_vruntime, vruntime);
+	cfs_rq->min_vruntimex = min_vruntime(cfs_rq->min_vruntime, vruntime);
+
 #ifndef CONFIG_64BIT
 	smp_wmb();
 	cfs_rq->min_vruntime_copy = cfs_rq->min_vruntime;
 #endif
 }
+
+#ifdef CONFIG_PERF_HUMANTASK
+static inline bool jump_queue(struct task_struct *tsk,
+			      struct rb_node *root)
+{
+	bool jump = false;
+
+	if (tsk && tsk->human_task && root) {
+		if (tsk->human_task > MAX_LEVER ||
+			sched_mi_boost() == MI_BOOST) {
+			jump = true;
+			goto out;
+		}
+
+		// 66%
+		if (tsk->human_task < MAX_LEVER)
+			jump = true;
+
+		tsk->human_task = jump ? ++tsk->human_task : 1;
+	}
+out:
+	if (jump)
+		trace_sched_debug_einfo(tsk, "jumper", "boostx",
+			tsk->human_task, sched_boost(), sched_mi_boost(),
+			sched_boost_top_app(), 0);
+
+	return jump;
+}
+#endif
 
 /*
  * Enqueue an entity into the rb-tree:
@@ -620,6 +652,19 @@ static void __enqueue_entity(struct cfs_rq *cfs_rq, struct sched_entity *se)
 	struct rb_node *parent = NULL;
 	struct sched_entity *entry;
 	bool leftmost = true;
+	int left = 0;
+	int right = 0;
+#ifdef CONFIG_PERF_HUMANTASK
+	bool speed = false;
+	struct task_struct *tsk = NULL;
+	if (entity_is_task(se)) {
+		tsk = task_of(se);
+		speed = jump_queue(tsk, *link);
+	}
+
+	if (speed)
+		se->vruntime =  tsk->human_task * 1000000;
+#endif
 
 	/*
 	 * Find the right place in the rbtree:
@@ -633,12 +678,17 @@ static void __enqueue_entity(struct cfs_rq *cfs_rq, struct sched_entity *se)
 		 */
 		if (entity_before(se, entry)) {
 			link = &parent->rb_left;
+			left++;
 		} else {
 			link = &parent->rb_right;
 			leftmost = false;
+			right++;
 		}
 	}
-
+#ifdef CONFIG_PERF_HUMANTASK
+	if (speed)
+		se->vruntime = entry ->vruntime  -1;
+#endif
 	rb_link_node(&se->run_node, parent, link);
 	rb_insert_color_cached(&se->run_node,
 			       &cfs_rq->tasks_timeline, leftmost);
@@ -7643,6 +7693,19 @@ static int get_start_cpu(struct task_struct *p)
 		start_cpu = rd->mid_cap_orig_cpu == -1 ?
 			rd->max_cap_orig_cpu : rd->mid_cap_orig_cpu;
 	}
+#ifdef CONFIG_PACKAGE_RUNTIME_INFO
+	if (game_super_task(p)) {
+		if (sysctl_boost_stask_to_big)
+			return rd->max_cap_orig_cpu;
+		return rd->mid_cap_orig_cpu;
+	}
+
+	if (game_vip_task(p))
+		return rd->mid_cap_orig_cpu;
+
+	if (fas_power_bias(p))
+		return rd->min_cap_orig_cpu;
+#endif
 	if (start_cpu == -1 || start_cpu == rd->max_cap_orig_cpu)
 		return start_cpu;
 
@@ -7669,6 +7732,7 @@ enum fastpaths {
 	NONE = 0,
 	SYNC_WAKEUP,
 	PREV_CPU_FASTPATH,
+	SCHED_BIG_TOP,
 };
 
 static inline int find_best_target(struct task_struct *p, int *backup_cpu,
@@ -7697,6 +7761,11 @@ static inline int find_best_target(struct task_struct *p, int *backup_cpu,
 	int isolated_candidate = -1;
 	bool boosted = fbt_env->boosted;
 	struct task_struct *curr_tsk;
+	struct root_domain *rd;
+#ifdef CONFIG_PACKAGE_RUNTIME_INFO
+	if (!prefer_idle)
+		prefer_idle = !!game_vip_task(p);
+#endif
 
 	*backup_cpu = -1;
 
@@ -7717,6 +7786,7 @@ static inline int find_best_target(struct task_struct *p, int *backup_cpu,
 
 	/* Find start CPU based on boost value */
 	start_cpu = fbt_env->start_cpu;
+	rd = cpu_rq(start_cpu)->rd;
 	/* Find SD for the start CPU */
 	sd = rcu_dereference(per_cpu(sd_ea, start_cpu));
 	if (!sd)
@@ -7773,6 +7843,11 @@ static inline int find_best_target(struct task_struct *p, int *backup_cpu,
 			if (fbt_env->skip_cpu == i)
 				continue;
 
+			if (sched_boost_top_app() && rd->mid_cap_orig_cpu != -1 &&
+				((i < rd->mid_cap_orig_cpu && MAX_USER_RT_PRIO <= p->prio &&
+				p->prio < DEFAULT_PRIO) ||
+				(i >= rd->mid_cap_orig_cpu && p->prio > DEFAULT_PRIO)))
+				break;
 			/*
 			 * p's blocked utilization is still accounted for on prev_cpu
 			 * so prev_cpu will receive a negative bias due to the double
@@ -8050,6 +8125,21 @@ static inline int find_best_target(struct task_struct *p, int *backup_cpu,
 		 * iterate lower capacity CPUs unless the task can't be
 		 * accommodated in the higher capacity CPUs.
 		 */
+#ifdef CONFIG_PACKAGE_RUNTIME_INFO
+		if (!sysctl_boost_stask_to_big) {
+			if (best_idle_cpu != -1) {
+				if (game_vip_task(p))
+					break;
+			} else if (target_cpu != -1 || best_active_cpu != -1) {
+				if (game_vip_task(p))
+					break;
+			}
+		} else {
+			if (game_vip_task(p) &&
+				(best_idle_cpu != -1 || target_cpu != -1 || best_active_cpu != -1))
+				break;
+		}
+#endif
 		if ((prefer_idle && best_idle_cpu != -1) ||
 		    (boosted && (best_idle_cpu != -1 || target_cpu != -1))) {
 			if (boosted) {
@@ -8361,6 +8451,13 @@ static int find_energy_efficient_cpu(struct sched_domain *sd,
 		fbt_env.fastpath = SYNC_WAKEUP;
 		goto out;
 	}
+	if (sched_boost_top_app() && is_top_app(p) && cpu_online(super_big_cpu) &&
+		!cpu_isolated(super_big_cpu) &&
+		cpumask_test_cpu(super_big_cpu, &p->cpus_allowed)) {
+		target_cpu = super_big_cpu;
+		fbt_env.fastpath = SCHED_BIG_TOP;
+		goto out;
+	}
 
 	/* prepopulate energy diff environment */
 	eenv = get_eenv(p, prev_cpu);
@@ -8435,7 +8532,10 @@ static int find_energy_efficient_cpu(struct sched_domain *sd,
 #endif
 		if (task_placement_boost_enabled(p) || fbt_env.need_idle || boosted ||
 		    is_rtg || __cpu_overutilized(prev_cpu, delta) ||
-		    !task_fits_max(p, prev_cpu) || cpu_isolated(prev_cpu))
+#ifdef CONFIG_PACKAGE_RUNTIME_INFO
+	    	game_vip_task(p) ||
+#endif
+			!task_fits_max(p, prev_cpu) || cpu_isolated(prev_cpu))
 			goto out;
 
 		/* Place target into NEXT slot */
@@ -8470,6 +8570,9 @@ out:
 			fbt_env.need_idle, fbt_env.fastpath, placement_boost,
 			start_t, boosted, is_rtg, get_rtg_status(p),
 			start_cpu);
+#ifdef CONFIG_PERF_HUMANTASK
+	p->cpux = target_cpu;
+#endif			
 	return target_cpu;
 }
 
@@ -8527,7 +8630,13 @@ static inline int wake_energy(struct task_struct *p, int prev_cpu,
 	}
 	return true;
 }
-
+#ifdef CONFIG_PACKAGE_RUNTIME_INFO
+static inline void wake_render(struct task_struct *p)
+{
+	if (is_render_thread(p))
+		current->pkg.migt.wake_render++;
+}
+#endif
 /*
  * select_task_rq_fair: Select target runqueue for the waking task in domains
  * that have the 'sd_flag' flag set. In practice, this is SD_BALANCE_WAKE,
@@ -8554,6 +8663,9 @@ select_task_rq_fair(struct task_struct *p, int prev_cpu, int sd_flag, int wake_f
 
 	if (energy_aware()) {
 		rcu_read_lock();
+#ifdef CONFIG_PACKAGE_RUNTIME_INFO
+		wake_render(p);
+#endif
 		new_cpu = find_energy_efficient_cpu(energy_sd, p,
 						cpu, prev_cpu, sync,
 						sibling_count_hint);
@@ -9560,7 +9672,10 @@ redo:
 			env->flags |= LBF_NEED_BREAK;
 			break;
 		}
-
+		if (sched_boost_top_app() &&
+				super_big_cpu == env->src_cpu &&
+				is_top_app(p))
+			goto next;
 		if (!can_migrate_task(p, env))
 			goto next;
 

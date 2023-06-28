@@ -194,8 +194,17 @@ void release_task(struct task_struct *p)
 	}
 
 repeat:
+
+#ifdef CONFIG_PACKAGE_RUNTIME_INFO
+	if (user_pkg(p->cred->user->uid.val)) {
+		write_lock_irq(&p->cred->user->pkg.lock);
+		list_del(&(p->pkg.list));
+		write_unlock_irq(&p->cred->user->pkg.lock);
+	}
+#endif
 	/* don't need to get the RCU readlock here - the process is dead and
 	 * can't be modifying its own credentials. But shut RCU-lockdep up */
+	
 	rcu_read_lock();
 	atomic_dec(&__task_cred(p)->user->processes);
 	rcu_read_unlock();
