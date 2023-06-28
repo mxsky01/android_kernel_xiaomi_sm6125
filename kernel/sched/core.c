@@ -86,7 +86,7 @@ const_debug unsigned int sysctl_sched_time_avg = MSEC_PER_SEC;
  */
 unsigned int sysctl_sched_rt_period = 1000000;
 
-__read_mostly1 int scheduler_running;
+__read_mostly int scheduler_running;
 
 /*
  * part of the period that we allow rt tasks to run in us.
@@ -7716,7 +7716,7 @@ void sched_exit(struct task_struct *p)
 }
 #endif /* CONFIG_SCHED_WALT */
 
-__read_mostly1 bool sched_predl = 1;
+__read_mostly bool sched_predl = 1;
 inline bool is_critical_task(struct task_struct *p)
 {
 	return is_top_app(p) || is_inherit_top_app(p);
