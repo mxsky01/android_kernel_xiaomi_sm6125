@@ -64,7 +64,7 @@ struct game_load {
 	int cluster; /* cluster_index*/
 };
 
-struct capacity_state {
+struct capacity_state2 {
 	unsigned long frequency;
 };
 
@@ -72,7 +72,7 @@ struct game_load_items {
 	u64 cpu_util[CLUSTER_TYPES];
 	u64 frame_start;
 	u64 frame_period;
-	struct capacity_state cap_states[CLUSTER_TYPES];
+	struct capacity_state2 cap_states[CLUSTER_TYPES];
 };
 
 static bool glk_maxfreq_limit = true;
