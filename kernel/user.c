@@ -171,7 +171,7 @@ void free_uid(struct user_struct *up)
 		return;
 
 	local_irq_save(flags);
-	if (atomic_dec_and_lock(&up->__count, &uidhash_lock))
+	if (atomic_dec_and_lock(&up->__count.refs, &uidhash_lock))
 		free_user(up, flags);
 	else
 		local_irq_restore(flags);
@@ -195,7 +195,7 @@ struct user_struct *alloc_uid(kuid_t uid)
 #ifdef CONFIG_PACKAGE_RUNTIME_INFO
 		init_package_runtime_info(new);
 #endif
-		atomic_set(&new->__count, 1);
+		atomic_set(&new->__count.refs, 1);
 
 		/*
 		 * Before adding this, check whether we raced
