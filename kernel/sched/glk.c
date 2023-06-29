@@ -33,6 +33,7 @@
 #include <linux/pkg_stat.h>
 #include <linux/syscore_ops.h>
 #include <linux/irq_work.h>
+#include <linux/cpufreq.h>
 #include "sched.h"
 #include "walt.h"
 
