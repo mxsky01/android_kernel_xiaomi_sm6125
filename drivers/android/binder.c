@@ -2893,8 +2893,8 @@ static int binder_fixup_parent(struct binder_transaction *t,
 
 	if (!binder_validate_fixup(target_proc, b, off_start_offset,
 				   parent_offset, bp->parent_offset,
-				   last_fixup_obj_off,
-				   last_fixup_min_off)) {
+				   last_fixup_obj_off2,
+				   last_fixup_min_off2)) {
 		binder_user_error("%d:%d got transaction with out-of-order buffer fixup\n",
 				  proc->pid, thread->pid);
 		return -EINVAL;
