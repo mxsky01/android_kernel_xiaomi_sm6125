@@ -2868,8 +2868,8 @@ static int binder_fixup_parent(struct binder_transaction *t,
 			       struct binder_buffer_object *bp,
 			       binder_size_t off_start_offset,
 			       binder_size_t num_valid,
-			       binder_size_t last_fixup_obj_off,
-			       binder_size_t last_fixup_min_off)
+			       binder_size_t last_fixup_obj_off2,
+			       binder_size_t last_fixup_min_off2)
 {
 	struct binder_buffer_object *parent;
 	struct binder_buffer *b = t->buffer;
@@ -3359,7 +3359,7 @@ static void binder_transaction(struct binder_proc *proc,
 			     (u64)tr->data_size, (u64)tr->offsets_size,
 			     (u64)extra_buffers_size);
 
-	if (!reply && !(tr->flags & TF_ONE_WAY))
+	if (!reply && !(tr->flags & TF_ONE_WAY)){
 		t->from = thread;
 #ifdef CONFIG_MIHW
 		t->async_from_pid = -1;
