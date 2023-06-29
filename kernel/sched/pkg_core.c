@@ -15,7 +15,7 @@ static u64 sys_update_time = 0xffffffff;
 static struct work_struct package_runtime_roll;
 static enum cluster_type cpu_cluster_map[NR_CPUS];
 static struct user_struct user_zero = {
-	.__count = REFCOUNT_INIT(1),
+	.__count = REFCOUNT_INIT(1).refs,
 };
 
 DECLARE_BITMAP(package_uid_bit, (TRACE_UID_MAX + 1));
