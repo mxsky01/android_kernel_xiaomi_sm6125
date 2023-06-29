@@ -126,6 +126,7 @@ void glk_force_maxfreq_break(bool val);
 bool get_minor_window_cpumask(struct task_struct *p, cpumask_t *mask);
 int fas_power_bias(struct task_struct *tsk);
 #else
+enum CLUSTER_AFFINITY mi_uid_type(int uid);
 static inline void migt_hook(struct task_struct *tsk, u64 delta, int cpu) {}
 static inline void migt_monitor_init(struct task_struct *p) {}
 static inline bool pkg_enable(void) { return false; }
