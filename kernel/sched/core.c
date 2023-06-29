@@ -5896,7 +5896,8 @@ out:
 	return ret;
 }
 
-bool sched_smp_initialized,__read_mostly;
+bool sched_smp_initialized;
+//,__read_mostly
 
 #ifdef CONFIG_NUMA_BALANCING
 /* Migrate current task p to target_cpu */
