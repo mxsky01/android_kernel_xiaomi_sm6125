@@ -108,7 +108,7 @@ static void package_runtime_roll_wk(struct work_struct *work)
 			}
 		}
 
-		if (refcount_read(&user->__count.refs) == 1) {
+		if (refcount_read(&user->__count) == 1) {
 			clear_bit(user->uid.val, package_uid_bit);
 			free_uid(user);
 		}
@@ -301,7 +301,7 @@ void init_package_runtime_info(struct user_struct *user)
 		uid_max_value = user->uid.val;
 	rwlock_init(&user->pkg.lock);
 	INIT_LIST_HEAD(&user->pkg.list);
-	refcount_inc(&user->__count.refs);
+	refcount_inc(&user->__count);
 }
 EXPORT_SYMBOL(init_package_runtime_info);
 
