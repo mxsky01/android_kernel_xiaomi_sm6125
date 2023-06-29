@@ -60,7 +60,7 @@ extern struct user_struct root_user;
 extern struct user_struct * alloc_uid(kuid_t);
 static inline struct user_struct *get_uid(struct user_struct *u)
 {
-	atomic_inc(&u->__count);
+	atomic_inc(&u->__count.refs);
 	return u;
 }
 extern void free_uid(struct user_struct *);
