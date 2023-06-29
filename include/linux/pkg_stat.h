@@ -136,6 +136,7 @@ static inline void update_pkg_load(struct task_struct *tsk, int cpu, int flag,
 static inline void package_runtime_monitor(u64 now) {}
 static inline void init_task_runtime_info(struct task_struct *tsk) {}
 static inline void init_package_runtime_info(struct user_struct *user) {}
+int get_cur_render_uid(void);
 static inline int get_cur_render_uid(void) {return -EPERM; }
 static inline int game_task(struct task_struct *tsk) {return 0; }
 static inline int game_ip_task(struct task_struct *tsk) {return 0; }
