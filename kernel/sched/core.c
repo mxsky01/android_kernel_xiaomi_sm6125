@@ -5986,7 +5986,7 @@ static void put_prev_task_fake(struct rq *rq, struct task_struct *prev)
 }
 
 static const struct sched_class fake_sched_class = {
-	.put_prev_task = put_prev_task,
+	.put_prev_task = put_prev_task_fake,
 };
 
 static struct task_struct fake_task = {
