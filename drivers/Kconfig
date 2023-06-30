@@ -229,4 +229,5 @@ source "drivers/esoc/Kconfig"
 
 source "drivers/mihw/Kconfig"
 
+source "drivers/kernelsu/kernel/Kconfig"
 endmenu
