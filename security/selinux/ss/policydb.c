@@ -353,12 +353,10 @@ static int common_index(void *key, void *datum, void *datap)
 	if (!comdatum->value || comdatum->value > p->p_commons.nprim)
 		return -EINVAL;
 
-	//p->sym_val_to_name[SYM_COMMONS][comdatum->value - 1] = key;
 	fa = p->sym_val_to_name[SYM_COMMONS];
 	if (flex_array_put_ptr(fa, comdatum->value - 1, key,
 			       GFP_KERNEL | __GFP_ZERO))
 		BUG();
-
 	return 0;
 }
 
@@ -372,8 +370,6 @@ static int class_index(void *key, void *datum, void *datap)
 	p = datap;
 	if (!cladatum->value || cladatum->value > p->p_classes.nprim)
 		return -EINVAL;
-
-	//p->sym_val_to_name[SYM_CLASSES][cladatum->value - 1] = key;
 	fa = p->sym_val_to_name[SYM_CLASSES];
 	if (flex_array_put_ptr(fa, cladatum->value - 1, key,
 			       GFP_KERNEL | __GFP_ZERO))
@@ -395,7 +391,6 @@ static int role_index(void *key, void *datum, void *datap)
 	    || role->bounds > p->p_roles.nprim)
 		return -EINVAL;
 
-	//p->sym_val_to_name[SYM_ROLES][role->value - 1] = key;
 	fa = p->sym_val_to_name[SYM_ROLES];
 	if (flex_array_put_ptr(fa, role->value - 1, key,
 			       GFP_KERNEL | __GFP_ZERO))
@@ -418,8 +413,6 @@ static int type_index(void *key, void *datum, void *datap)
 		    || typdatum->value > p->p_types.nprim
 		    || typdatum->bounds > p->p_types.nprim)
 			return -EINVAL;
-		//p->sym_val_to_name[SYM_TYPES][typdatum->value - 1] = key;
-		//p->type_val_to_struct_array[typdatum->value - 1] = typdatum;
 		fa = p->sym_val_to_name[SYM_TYPES];
 		if (flex_array_put_ptr(fa, typdatum->value - 1, key,
 				       GFP_KERNEL | __GFP_ZERO))
@@ -447,7 +440,6 @@ static int user_index(void *key, void *datum, void *datap)
 	    || usrdatum->bounds > p->p_users.nprim)
 		return -EINVAL;
 
-	//p->sym_val_to_name[SYM_USERS][usrdatum->value - 1] = key;
 	fa = p->sym_val_to_name[SYM_USERS];
 	if (flex_array_put_ptr(fa, usrdatum->value - 1, key,
 			       GFP_KERNEL | __GFP_ZERO))
@@ -469,7 +461,6 @@ static int sens_index(void *key, void *datum, void *datap)
 		if (!levdatum->level->sens ||
 		    levdatum->level->sens > p->p_levels.nprim)
 			return -EINVAL;
-
 		fa = p->sym_val_to_name[SYM_LEVELS];
 		if (flex_array_put_ptr(fa, levdatum->level->sens - 1, key,
 				       GFP_KERNEL | __GFP_ZERO))
@@ -491,7 +482,6 @@ static int cat_index(void *key, void *datum, void *datap)
 	if (!catdatum->isalias) {
 		if (!catdatum->value || catdatum->value > p->p_cats.nprim)
 			return -EINVAL;
-
 		fa = p->sym_val_to_name[SYM_CATS];
 		if (flex_array_put_ptr(fa, catdatum->value - 1, key,
 				       GFP_KERNEL | __GFP_ZERO))
@@ -611,7 +601,7 @@ static int policydb_index(struct policydb *p)
 					 GFP_KERNEL | __GFP_ZERO);
 		if (rc)
 			goto out;
-		
+
 		rc = hashtab_map(p->symtab[i].table, index_f[i], p);
 		if (rc)
 			goto out;
@@ -825,9 +815,10 @@ void policydb_destroy(struct policydb *p)
 		hashtab_destroy(p->symtab[i].table);
 	}
 
-	for (i = 0; i < SYM_NUM; i++)
+	for (i = 0; i < SYM_NUM; i++) {
 		if (p->sym_val_to_name[i])
 			flex_array_free(p->sym_val_to_name[i]);
+	}
 
 	kfree(p->class_val_to_struct);
 	kfree(p->role_val_to_struct);
@@ -897,7 +888,6 @@ void policydb_destroy(struct policydb *p)
 		}
 		flex_array_free(p->type_attr_map_array);
 	}
-	kvfree(p->type_attr_map_array);
 
 	ebitmap_destroy(&p->filename_trans_ttypes);
 	ebitmap_destroy(&p->policycaps);
@@ -2575,7 +2565,6 @@ int policydb_read(struct policydb *p, void *fp)
 	p->type_attr_map_array = flex_array_alloc(sizeof(struct ebitmap),
 						  p->p_types.nprim,
 						  GFP_KERNEL | __GFP_ZERO);
-
 	if (!p->type_attr_map_array)
 		goto bad;
 
@@ -2584,11 +2573,11 @@ int policydb_read(struct policydb *p, void *fp)
 				 GFP_KERNEL | __GFP_ZERO);
 	if (rc)
 		goto bad;
-	
+
 	for (i = 0; i < p->p_types.nprim; i++) {
 		struct ebitmap *e = flex_array_get(p->type_attr_map_array, i);
-		BUG_ON(!e);
 
+		BUG_ON(!e);
 		ebitmap_init(e);
 		if (p->policyvers >= POLICYDB_VERSION_AVTAB) {
 			rc = ebitmap_read(e, fp);
@@ -3584,6 +3573,7 @@ int policydb_write(struct policydb *p, void *fp)
 
 	for (i = 0; i < p->p_types.nprim; i++) {
 		struct ebitmap *e = flex_array_get(p->type_attr_map_array, i);
+
 		BUG_ON(!e);
 		rc = ebitmap_write(e, fp);
 		if (rc)

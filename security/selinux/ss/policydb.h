@@ -24,6 +24,8 @@
 #ifndef _SS_POLICYDB_H_
 #define _SS_POLICYDB_H_
 
+#include <linux/flex_array.h>
+
 #include "symtab.h"
 #include "avtab.h"
 #include "sidtab.h"
@@ -31,7 +33,6 @@
 #include "mls_types.h"
 #include "context.h"
 #include "constraint.h"
-#include <linux/flex_array.h>
 
 /*
  * A datum type is defined for each kind of symbol
@@ -252,14 +253,12 @@ struct policydb {
 #define p_cats symtab[SYM_CATS]
 
 	/* symbol names indexed by (value - 1) */
-	//char		**sym_val_to_name[SYM_NUM];
 	struct flex_array *sym_val_to_name[SYM_NUM];
 
 	/* class, role, and user attributes indexed by (value - 1) */
 	struct class_datum **class_val_to_struct;
 	struct role_datum **role_val_to_struct;
 	struct user_datum **user_val_to_struct;
-	//struct type_datum **type_val_to_struct_array;
 	struct flex_array *type_val_to_struct_array;
 
 	/* type enforcement access vectors and transitions */
@@ -297,7 +296,6 @@ struct policydb {
 	struct hashtab *range_tr;
 
 	/* type -> attribute reverse mapping */
-	//struct ebitmap *type_attr_map_array;
 	struct flex_array *type_attr_map_array;
 
 	struct ebitmap policycaps;
@@ -366,8 +364,6 @@ static inline int put_entry(const void *buf, size_t bytes, int num, struct polic
 {
 	size_t len = bytes * num;
 
-	if (len > fp->len)
-		return -EINVAL;
 	memcpy(fp->data, buf, len);
 	fp->data += len;
 	fp->len -= len;

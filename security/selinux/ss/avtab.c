@@ -303,7 +303,6 @@ void avtab_destroy(struct avtab *h)
 
 int avtab_init(struct avtab *h)
 {
-	flex_array_free(h->htable);
 	h->htable = NULL;
 	h->nel = 0;
 	return 0;
@@ -329,9 +328,9 @@ int avtab_alloc(struct avtab *h, u32 nrules)
 	if (nslot > MAX_AVTAB_HASH_BUCKETS)
 		nslot = MAX_AVTAB_HASH_BUCKETS;
 	mask = nslot - 1;
+
 	h->htable = flex_array_alloc(sizeof(struct avtab_node *), nslot,
 				     GFP_KERNEL | __GFP_ZERO);
-	//h->htable = kvcalloc(nslot, sizeof(void *), GFP_KERNEL);
 	if (!h->htable)
 		return -ENOMEM;
 
@@ -354,7 +353,6 @@ void avtab_hash_eval(struct avtab *h, char *tag)
 	max_chain_len = 0;
 	chain2_len_sum = 0;
 	for (i = 0; i < h->nslot; i++) {
-		//cur = h->htable[i];
 		cur = flex_array_get_ptr(h->htable, i);
 		if (cur) {
 			slots_used++;

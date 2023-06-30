@@ -88,6 +88,7 @@ struct avtab {
 	u32 nel;	/* number of elements */
 	u32 nslot;      /* number of hash slots */
 	u32 mask;       /* mask to compute hash func */
+
 };
 
 int avtab_init(struct avtab *);
