@@ -15,6 +15,7 @@
 #include "ginkgo-trinket-touchscreen.dtsi"
 #include "ginkgo-trinket-usb.dtsi"
 #include "ginkgo-trinket-vibrator.dtsi"
+#include "../qcom-base/pmi632.dtsi"
 
 &firmware {
 	android {
